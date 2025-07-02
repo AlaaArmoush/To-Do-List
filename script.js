@@ -135,5 +135,80 @@ function editTask(index, li){
     }
 }
 
+let focusedIndex = -1;
 
+document.addEventListener("keydown", function(e){
+    const listItems = listContainer.querySelectorAll("li");
+    if(listItems.length === 0) return;
 
+    switch(e.key){
+        case "ArrowDown":
+            e.preventDefault();
+            focusedIndex = (focusedIndex + 1) % listItems.length;
+            listItems[focusedIndex].focus();
+            break;
+
+        case "ArrowUp":
+            e.preventDefault();
+            focusedIndex = (focusedIndex - 1 + listItems.length) % listItems.length;
+            listItems[focusedIndex].focus();
+            break;
+
+        case " ": 
+            if(document.activeElement.tagName === "INPUT") break;
+            e.preventDefault();
+            if (focusedIndex >= 0) {
+                const index = listItems[focusedIndex].getAttribute("data-index");
+                tasks[index].completed = !tasks[index].completed;
+                saveData();
+                renderTasks();
+                setTimeout(() => {
+                    const newItems = listContainer.querySelectorAll("li");
+                    if (newItems[focusedIndex]) newItems[focusedIndex].focus();
+                }, 0);
+            }
+            break;
+
+        case "n":
+        case "N":
+            if (document.activeElement.tagName === "INPUT") break;
+            e.preventDefault();
+            inputBox.focus();
+            break;
+
+        case "Backspace":
+        case "Delete":
+            if(document.activeElement.tagName === "INPUT") break;
+            e.preventDefault();
+            if (focusedIndex >= 0) {
+                const index = listItems[focusedIndex].getAttribute("data-index");
+                tasks.splice(index, 1);
+                saveData();
+                renderTasks();
+                const newItems = listContainer.querySelectorAll("li");
+                if (newItems.length > 0) {
+                    focusedIndex = Math.min(focusedIndex, newItems.length - 1);
+                    newItems[focusedIndex].focus();
+                } else {
+                    focusedIndex = -1;
+                    inputBox.focus();
+                }
+            }
+            break;
+
+        case "Enter":
+            e.preventDefault();
+            if (focusedIndex >= 0) {
+                const index = listItems[focusedIndex].getAttribute("data-index");
+                editTask(index, listItems[focusedIndex]);
+            }
+            break;
+    }
+});
+
+listContainer.addEventListener("focus", function(e){
+    if(e.target.tagName === "LI"){
+        const listItems = listContainer.querySelectorAll("li");
+        focusedIndex = Array.from(listItems).indexOf(e.target);
+    }
+}, true);
