@@ -91,49 +91,44 @@ listContainer.addEventListener("click", function(e) {
   renderTasks();
 });
 
-function editTask(index, li){
-    let input = document.createElement("input");
-    input.type = "text";
-    input.value = tasks[index].text;
-    input.className = "edit-input";
+function editTask(index, li) {
+  let input = document.createElement("input");
+  input.type = "text";
+  input.value = tasks[index].text;
+  input.className = "edit-input";
 
-    li.textContent = "";
-    li.appendChild(input);
-    input.focus();
+  li.textContent = "";
+  li.appendChild(input);
+  input.focus();
 
-    let span = document.createElement("span");
-    span.innerHTML = "\u00d7";
-    li.appendChild(span);
-    
-    input.addEventListener("keydown", function(e){
-        if(e.key === "Escape"){
-            renderTasks();
-        }
-    });
+  let span = document.createElement("span");
+  span.innerHTML = "\u00d7";
+  li.appendChild(span);
 
-    input.addEventListener("keypress", function(e){
-        if(e.key === "Enter"){
-            saveEdit();
-        }
-    });
-
-    input.addEventListener("blur", function(){
-        saveEdit();
-    });
-
-    function saveEdit(){
-        let edit = input.value.trim();
-        if(edit === ""){
-            alert("Task cannot be empty!");
-            input.focus();
-            return;
-        }
-
-        tasks[index].text = edit;
-        saveData();
-        renderTasks();
+  input.addEventListener("keydown", function(e) {
+    if (e.key === "Escape") {
+      renderTasks();
+    } else if (e.key === "Enter") {
+      saveEdit();
     }
+  });
+
+  input.addEventListener("blur", function() {
+    saveEdit();
+  });
+
+  function saveEdit() {
+    let edit = input.value.trim();
+    if (edit === "") {
+      tasks.splice(index, 1);  
+    } else {
+      tasks[index].text = edit;
+    }
+    saveData();
+    renderTasks();
+  }
 }
+
 
 let focusedIndex = -1;
 
@@ -212,3 +207,4 @@ listContainer.addEventListener("focus", function(e){
         focusedIndex = Array.from(listItems).indexOf(e.target);
     }
 }, true);
+
