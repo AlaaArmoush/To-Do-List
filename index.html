@@ -5,21 +5,43 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>To Do List</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
     <div class="container">
         <div class="todo-app">
-            <h2>To-Do List <img src="images/icon.png" alt="notebook icon"></h2>
+            <h2> <img src="images/icon.png" alt="notebook icon"> To-Do List</h2>
+            <button id="help-button">Keyboard Shortcuts</button>
             <div class="row">
-                <input type="text" id="input-box" placeholder="Add your task">
+                <input type="text" id="input-box" placeholder="Add a new task...">
                 <button onclick="addTask()">Add</button>
             </div>
-
             <ul id="list-container">
-                
+                </ul>
+        </div>
+    </div>
+
+
+    <div id="shortcut-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h3>Keyboard Shortcuts</h3>
+            <ul>
+            <li><b>↑ / ↓</b> — Navigate tasks</li>
+            <li><b>Space</b> — Toggle complete for focused task</li>
+            <li><b>Enter</b> — Edit focused task</li>
+            <li><b>Delete / Backspace</b> — Delete focused task</li>
+            <li><b>N</b> — Focus input box</li>
+            <li><b>Shift + C</b> — Clear all completed tasks</li>
+            <li><b>Esc</b> — Cancel edit</li>
             </ul>
         </div>
     </div>
+
+
+
     <script src="script.js"></script>
 </body>
 </html>

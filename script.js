@@ -175,6 +175,7 @@ document.addEventListener("keydown", function(e){
 
         case "n":
         case "N":
+            focusedIndex = -1;
             if (document.activeElement.tagName === "INPUT") break;
             e.preventDefault();
             inputBox.focus();
@@ -233,3 +234,20 @@ listContainer.addEventListener("focus", function(e){
 
 
 
+const modal = document.getElementById("shortcut-modal");
+const btn = document.getElementById("help-button");
+const span = document.querySelector(".close-modal");
+
+btn.onclick = function() {
+  modal.style.display = "block";
+};
+
+span.onclick = function() {
+  modal.style.display = "none";
+};
+
+window.onclick = function(event) {
+  if (event.target == modal) {
+    modal.style.display = "none";
+  }
+};
