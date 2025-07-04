@@ -188,8 +188,11 @@ function editTask(index, li) {
     span.innerHTML = "\u00d7";
     li.appendChild(span);
 
+    let wasCancelled = false; 
+
     input.addEventListener("keydown", function(e) {
         if (e.key === "Escape") {
+        wasCancelled = true;   
         isEditing = false;  
         renderTasks();
         } else if (e.key === "Enter") {
@@ -203,6 +206,7 @@ function editTask(index, li) {
     });
 
     function saveEdit() {
+        if (wasCancelled) return; 
         let edit = input.value.trim();
         isEditing = false;
         if (edit === "") {
@@ -214,6 +218,7 @@ function editTask(index, li) {
         renderTasks();
     }
 }
+
 
 
 let focusedIndex = -1;
