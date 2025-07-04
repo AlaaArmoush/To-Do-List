@@ -118,11 +118,42 @@ ul li{
     cursor: pointer;
     user-select: none;
     transition: background-color 0.3s, transform 0.2s, color 0.3s;
+    -webkit-user-drag: element;
 }
 
 ul li:hover{
     background: rgba(255, 255, 255, 0.1);
     transform: scale(1.02);
+}
+
+ul li.dragging {
+    opacity: 0.5;
+    transform: scale(0.95);
+}
+
+.drag-arrow {
+    position: absolute;
+    right: 50px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--accent-color);
+    font-size: 1.2rem;
+    font-weight: bold;
+    pointer-events: none;
+}
+
+
+.drop-indicator{
+    height: 3px;
+    background: var(--accent-color);
+    margin: 5px 0;
+    border-radius: 2px;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.drop-indicator.active {
+    opacity: 1;
 }
 
 .check-circle {
@@ -205,8 +236,6 @@ li:focus {
   color: var(--primary-text-color);
 }
 
-
-
 .modal {
   display: none; 
   position: fixed; 
@@ -220,8 +249,12 @@ li:focus {
 }
 
 .modal-content {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+
   background-color: var(--app-bg-color);
-  margin: 10% auto; 
   padding: 20px;
   border: 1px solid #888;
   width: 90%;
