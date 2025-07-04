@@ -91,7 +91,10 @@ listContainer.addEventListener("click", function(e) {
   renderTasks();
 });
 
+let isEditing = false;
+
 function editTask(index, li) {
+  isEditing = true;  
   let input = document.createElement("input");
   input.type = "text";
   input.value = tasks[index].text;
@@ -107,8 +110,10 @@ function editTask(index, li) {
 
   input.addEventListener("keydown", function(e) {
     if (e.key === "Escape") {
+      isEditing = false;  
       renderTasks();
     } else if (e.key === "Enter") {
+      e.stopPropagation();  
       saveEdit();
     }
   });
@@ -119,6 +124,7 @@ function editTask(index, li) {
 
   function saveEdit() {
     let edit = input.value.trim();
+    isEditing = false;
     if (edit === "") {
       tasks.splice(index, 1);  
     } else {
@@ -134,16 +140,18 @@ let focusedIndex = -1;
 
 document.addEventListener("keydown", function(e){
     const listItems = listContainer.querySelectorAll("li");
-    if(listItems.length === 0) return;
+    if(isEditing) return;
 
     switch(e.key){
         case "ArrowDown":
+            if(listItems.length === 0) return;
             e.preventDefault();
             focusedIndex = (focusedIndex + 1) % listItems.length;
             listItems[focusedIndex].focus();
             break;
 
         case "ArrowUp":
+            if(listItems.length === 0) return;
             e.preventDefault();
             focusedIndex = (focusedIndex - 1 + listItems.length) % listItems.length;
             listItems[focusedIndex].focus();
@@ -151,6 +159,7 @@ document.addEventListener("keydown", function(e){
 
         case " ": 
             if(document.activeElement.tagName === "INPUT") break;
+            if(listItems.length === 0) return;
             e.preventDefault();
             if (focusedIndex >= 0) {
                 const index = listItems[focusedIndex].getAttribute("data-index");
@@ -170,9 +179,20 @@ document.addEventListener("keydown", function(e){
             e.preventDefault();
             inputBox.focus();
             break;
-
+        
+        case "c":
+        case "C":
+            if(e.shiftKey  && document.activeElement.tagName != "INPUT"){
+                e.preventDefault();
+                tasks = tasks.filter(task => !task.completed);
+                saveData();
+                renderTasks();
+            }
+            break;
+        
         case "Backspace":
         case "Delete":
+            if(listItems.length === 0) return;
             if(document.activeElement.tagName === "INPUT") break;
             e.preventDefault();
             if (focusedIndex >= 0) {
@@ -192,7 +212,10 @@ document.addEventListener("keydown", function(e){
             break;
 
         case "Enter":
+            if (document.activeElement === inputBox) break;
+            if(listItems.length === 0) return;
             e.preventDefault();
+            if (document.activeElement.tagName === "INPUT") break;
             if (focusedIndex >= 0) {
                 const index = listItems[focusedIndex].getAttribute("data-index");
                 editTask(index, listItems[focusedIndex]);
@@ -207,4 +230,6 @@ listContainer.addEventListener("focus", function(e){
         focusedIndex = Array.from(listItems).indexOf(e.target);
     }
 }, true);
+
+
 

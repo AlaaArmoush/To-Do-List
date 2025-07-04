@@ -115,6 +115,7 @@ ul li .close:hover {
 }
 
 li:focus {
-  outline: 2px solid #555;
+  outline: 2px solid #ff5945;
   border-radius: 10px;
 }
+
