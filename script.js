@@ -75,11 +75,12 @@ function addCategory() {
     renderCategories();
 }
 
-newCategoryInput.addEventListener("keypress", function(e){
+newCategoryInput.addEventListener("keydown", function(e){
     if(e.key === "Enter"){
         addCategory();
     }
 });
+
 
 function selectCategory(categoryName) {
     activeCategory = categoryName;
