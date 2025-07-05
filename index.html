@@ -3,26 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>To Do List</title>
+    <title>Categorized To Do List</title>
     <link rel="stylesheet" href="style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div class="container">
-        <div class="todo-app">
-            <h2> <img src="images/icon.png" alt="notebook icon"> To-Do List</h2>
-            <button id="help-button">Keyboard Shortcuts</button>
-            <div class="row">
-                <input type="text" id="input-box" placeholder="Add a new task...">
-                <button onclick="addTask()">Add</button>
+    <div class="main-container">
+        <div class="category-sidebar">
+            <h3>Categories</h3>
+            <ul id="category-list">
+            </ul>
+            <div class="add-category-row">
+                <input type="text" id="new-category-input" placeholder="Add new category...">
+                <button onclick="addCategory()">Add</button>
             </div>
-            <ul id="list-container">
-                </ul>
+        </div>
+
+        <div class="container">
+            <div class="todo-app">
+                <h2> <img src="images/icon.png" alt="notebook icon"> To-Do List</h2>
+                <button id="help-button">Keyboard Shortcuts</button>
+                <div class="row">
+                    <input type="text" id="input-box" placeholder="Add a new task...">
+                    <button onclick="addTask()">Add</button>
+                </div>
+                <ul id="list-container">
+                    </ul>
+            </div>
         </div>
     </div>
-
 
     <div id="shortcut-modal" class="modal">
         <div class="modal-content">
@@ -31,18 +42,17 @@
             <ul>
             <li><b>↑ / ↓</b> — Navigate tasks</li>
             <li><b>Shift + ↑ / ↓</b> — Reorder tasks</li>
+            <li><b>Ctrl + ↑ / ↓</b> — Switch categories</li>
             <li><b>Space</b> — Toggle complete for focused task</li>
             <li><b>Enter</b> — Edit focused task</li>
             <li><b>Delete / Backspace</b> — Delete focused task</li>
             <li><b>N</b> — Place cursor in the new task input field</li>
+            <li><b>Shift + N</b> — Place cursor in new category input</li>
             <li><b>Shift + C</b> — Clear all completed tasks</li>
             <li><b>Esc</b> — Cancel edit</li>
             </ul>
         </div>
     </div>
-
-
-
-    <script src="script.js"></script>
+ <script src="script.js"></script>
 </body>
 </html>

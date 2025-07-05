@@ -1,15 +1,125 @@
 const inputBox = document.getElementById("input-box");
 const listContainer = document.getElementById("list-container");
+const categoryList = document.getElementById("category-list");
+const newCategoryInput = document.getElementById("new-category-input");
 
 let tasks = [];
+let categories = [];
+let activeCategory = "All";
 
-function addTask(){
-    if(inputBox.value.trim() === ""){
+function loadCategories() {
+    const storedCategories = localStorage.getItem("categories");
+    if (storedCategories) {
+        categories = JSON.parse(storedCategories);
+    } else {
+        categories = [{ name: "All", immutable: true }];
+    }
+}
+
+function saveCategories() {
+    localStorage.setItem("categories", JSON.stringify(categories));
+}
+
+function renderCategories() {
+    categoryList.innerHTML = "";
+
+    categories.forEach(category => {
+        const li = document.createElement("li");
+        li.setAttribute("data-category", category.name);
+        li.classList.add("category-item");
+
+        if (category.name === activeCategory) {
+            li.classList.add("active");
+        }
+        if (category.immutable) {
+            li.classList.add("all-category");
+        }
+
+        const categoryNameSpan = document.createElement("span");
+        categoryNameSpan.classList.add("category-name");
+        categoryNameSpan.textContent = category.name;
+        li.appendChild(categoryNameSpan);
+
+        if (!category.immutable) {
+            const deleteSpan = document.createElement("span");
+            deleteSpan.className = "delete-category";
+            deleteSpan.innerHTML = "\u00d7";
+            deleteSpan.title = `Delete "${category.name}" category`;
+            li.appendChild(deleteSpan);
+
+            deleteSpan.addEventListener("click", (e) => {
+                e.stopPropagation();
+                deleteCategory(category.name);
+            });
+        }
+
+        li.addEventListener("click", () => selectCategory(category.name));
+        categoryList.appendChild(li);
+    });
+}
+
+function addCategory() {
+    const newCategoryName = newCategoryInput.value.trim();
+    if (newCategoryName === "") {
+        alert("Category name cannot be empty!");
+        return;
+    }
+    if (categories.some(cat => cat.name.toLowerCase() === newCategoryName.toLowerCase())) {
+        alert("Category already exists!");
+        return;
+    }
+
+    categories.push({ name: newCategoryName, immutable: false });
+    newCategoryInput.value = "";
+    saveCategories();
+    renderCategories();
+}
+
+newCategoryInput.addEventListener("keypress", function(e){
+    if(e.key === "Enter"){
+        addCategory();
+    }
+});
+
+function selectCategory(categoryName) {
+    activeCategory = categoryName;
+    renderCategories();
+    renderTasks();
+}
+
+function deleteCategory(categoryName) {
+    if (categoryName === "All") {
+        alert("The 'All' category cannot be deleted.");
+        return;
+    }
+
+    if (confirm(`Are you sure you want to delete the category "${categoryName}"? All tasks within this category will be moved to "All".`)) {
+        tasks.forEach(task => {
+            if (task.category === categoryName) {
+                task.category = "All";
+            }
+        });
+
+        categories = categories.filter(cat => cat.name !== categoryName);
+        saveCategories();
+        saveData();
+
+        if (activeCategory === categoryName) {
+            activeCategory = "All";
+        }
+        renderCategories();
+        renderTasks();
+    }
+}
+
+function addTask() {
+    if (inputBox.value.trim() === "") {
         alert("You have to write something first!");
-    }else{
+    } else {
         tasks.push({
             text: inputBox.value.trim(),
-            completed: false
+            completed: false,
+            category: activeCategory
         });
         inputBox.value = "";
         saveData();
@@ -17,61 +127,85 @@ function addTask(){
     }
 }
 
-inputBox.addEventListener("keypress", function(event){
-    if(event.key === "Enter"){
+inputBox.addEventListener("keypress", function (event) {
+    if (event.key === "Enter") {
         addTask();
     }
 });
 
-function loadTasks(){
+function loadTasks() {
     const storedTasks = localStorage.getItem("tasks");
-    if(storedTasks){
+    if (storedTasks) {
         tasks = JSON.parse(storedTasks);
-    }else{
+    } else {
         tasks = [];
     }
+    tasks.forEach(task => {
+        if (!task.hasOwnProperty('category')) {
+            task.category = "All";
+        }
+    });
 }
 
 let draggedIndex = -1;
 
-function renderTasks(){
+function renderTasks() {
     listContainer.innerHTML = "";
-    let task, li, checkSpan, textNode, delSpan;
-    for(let i = 0; i < tasks.length; i++){
-        task = tasks[i];
-        li = document.createElement("li");
+    const filteredTasks = tasks.filter(task =>
+        activeCategory === "All" || task.category === activeCategory
+    );
 
+    if (filteredTasks.length === 0 && activeCategory !== "All") {
+        const noTasksMessage = document.createElement("li");
+        noTasksMessage.textContent = `No tasks in "${activeCategory}" category.`;
+        noTasksMessage.style.cursor = "default";
+        noTasksMessage.style.backgroundColor = "transparent";
+        noTasksMessage.style.boxShadow = "none";
+        listContainer.appendChild(noTasksMessage);
+        return;
+    } else if (filteredTasks.length === 0 && activeCategory === "All") {
+        const noTasksMessage = document.createElement("li");
+        noTasksMessage.textContent = "No tasks yet! Add one above.";
+        noTasksMessage.style.cursor = "default";
+        noTasksMessage.style.backgroundColor = "transparent";
+        noTasksMessage.style.boxShadow = "none";
+        listContainer.appendChild(noTasksMessage);
+        return;
+    }
+
+    filteredTasks.forEach((task, i) => {
+        const li = document.createElement("li");
         li.draggable = true;
         li.addEventListener('dragstart', handleDragStart);
         li.addEventListener('dragover', handleDragOver);
         li.addEventListener('drop', handleDrop);
         li.addEventListener('dragend', handleDragEnd);
 
-        checkSpan = document.createElement("span");
+        const checkSpan = document.createElement("span");
         checkSpan.className = "check-circle";
         li.appendChild(checkSpan);
-        
-        textNode = document.createTextNode(task.text);
+
+        const textNode = document.createTextNode(task.text);
         li.appendChild(textNode);
 
-        delSpan = document.createElement("span");
+        const delSpan = document.createElement("span");
         delSpan.className = "close";
         delSpan.innerHTML = "\u00d7";
         li.appendChild(delSpan);
 
-        if(task.completed){
+        if (task.completed) {
             li.classList.add("checked");
         }
 
-        li.setAttribute("data-index", i);
+        li.setAttribute("data-original-index", tasks.indexOf(task));
         li.setAttribute("tabindex", 0);
 
         listContainer.appendChild(li);
-    }
+    });
 }
 
 function handleDragStart(e) {
-    draggedIndex = parseInt(e.target.getAttribute('data-index'));
+    draggedIndex = parseInt(e.target.getAttribute('data-original-index'));
     e.target.classList.add('dragging');
     e.dataTransfer.effectAllowed = 'move';
 }
@@ -80,139 +214,163 @@ function handleDragOver(e) {
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
 
-    const targetIndex = parseInt(e.currentTarget.getAttribute('data-index'));
-    if (targetIndex === draggedIndex) return;
+    const targetLi = e.currentTarget;
+    const targetOriginalIndex = parseInt(targetLi.getAttribute('data-original-index'));
 
-    const listItems = listContainer.querySelectorAll('li');
+    if (targetOriginalIndex === draggedIndex) return;
 
     document.querySelectorAll('.drag-arrow').forEach(arrow => arrow.remove());
 
-    listItems.forEach(li => {
-        const liIndex = parseInt(li.getAttribute('data-index'));
+    const draggedCategory = tasks[draggedIndex].category;
+    const targetCategory = tasks[targetOriginalIndex].category;
 
-        if (draggedIndex < targetIndex) {
-        if (liIndex > draggedIndex && liIndex <= targetIndex) {
+    if (draggedCategory !== activeCategory || targetCategory !== activeCategory) {
+        return;
+    }
+
+    const listItems = Array.from(listContainer.querySelectorAll('li'));
+    const draggedElement = listItems.find(item => parseInt(item.getAttribute('data-original-index')) === draggedIndex);
+
+    listItems.forEach(li => {
+        if (li === draggedElement) return;
+
+        const liOriginalIndex = parseInt(li.getAttribute('data-original-index'));
+        const liCategory = tasks[liOriginalIndex].category;
+
+        if (liCategory === activeCategory || activeCategory === "All") {
             const arrow = document.createElement('span');
             arrow.className = 'drag-arrow';
-            arrow.textContent = '↑';
-            li.appendChild(arrow);
-        }
-        } else {
-        if (liIndex >= targetIndex && liIndex < draggedIndex) {
-            const arrow = document.createElement('span');
-            arrow.className = 'drag-arrow';
-            arrow.textContent = '↓';
-            li.appendChild(arrow);
-        }
+
+            if (draggedIndex < liOriginalIndex && liOriginalIndex <= targetOriginalIndex) {
+                arrow.textContent = '↑';
+                li.appendChild(arrow);
+            } else if (draggedIndex > liOriginalIndex && liOriginalIndex >= targetOriginalIndex) {
+                arrow.textContent = '↓';
+                li.appendChild(arrow);
+            }
         }
     });
 }
 
 
-
 function handleDrop(e) {
     e.preventDefault();
-    
-    const arrow = e.currentTarget.querySelector('.drag-arrow');
-    if (arrow) {
-        arrow.remove();
+
+    document.querySelectorAll('.drag-arrow').forEach(arrow => arrow.remove());
+
+    const targetOriginalIndex = parseInt(e.currentTarget.getAttribute('data-original-index'));
+
+    if (draggedIndex === -1 || draggedIndex === targetOriginalIndex) {
+        return;
     }
-    
-    const targetIndex = parseInt(e.currentTarget.getAttribute('data-index'));
-    
-    if (draggedIndex !== targetIndex && draggedIndex !== -1) {
-        const draggedTask = tasks[draggedIndex];
-        tasks.splice(draggedIndex, 1);
-        
-        const newIndex = draggedIndex < targetIndex ? targetIndex : targetIndex;
-        tasks.splice(newIndex, 0, draggedTask);
-        
-        saveData();
-        renderTasks();
+
+    const draggedTask = tasks[draggedIndex];
+    const targetTask = tasks[targetOriginalIndex];
+
+    if (draggedTask.category !== activeCategory && activeCategory !== "All") {
+        return;
     }
+    if (targetTask.category !== activeCategory && activeCategory !== "All") {
+        return;
+    }
+
+    const originalTaskIndex = tasks.indexOf(draggedTask);
+    const targetTaskIndex = tasks.indexOf(targetTask);
+
+    if (originalTaskIndex === -1 || targetTaskIndex === -1) return;
+
+    tasks.splice(originalTaskIndex, 1);
+    tasks.splice(targetTaskIndex, 0, draggedTask);
+
+    saveData();
+    renderTasks();
 }
+
 
 function handleDragEnd(e) {
     e.target.classList.remove('dragging');
     const dragArrows = document.querySelectorAll('.drag-arrow');
-    for(let i = 0; i < dragArrows.length; i++) {
+    for (let i = 0; i < dragArrows.length; i++) {
         dragArrows[i].remove();
     }
     draggedIndex = -1;
 }
 
 
-function saveData(){
+function saveData() {
     localStorage.setItem("tasks", JSON.stringify(tasks));
 }
 
+loadCategories();
 loadTasks();
+renderCategories();
 renderTasks();
 
 
-listContainer.addEventListener("click", function(e) {
-    const li = e.target.closest("li[data-index]");
+listContainer.addEventListener("click", function (e) {
+    const li = e.target.closest("li[data-original-index]");
     if (!li) return;
-    
-    const index = li.getAttribute("data-index");
+
+    const originalIndex = parseInt(li.getAttribute("data-original-index"));
+    const task = tasks[originalIndex];
 
     if (e.target.classList.contains("check-circle")) {
-        tasks[index].completed = !tasks[index].completed;
+        task.completed = !task.completed;
     } else if (e.target.classList.contains("close")) {
-        tasks.splice(index, 1);
+        tasks.splice(originalIndex, 1);
     } else {
-        if (!e.target.classList.contains("check-circle") && !e.target.classList.contains("close")) {
-        editTask(index, li);
-        return; 
-        }
+        if (li.style.cursor === "default") return;
+        editTask(originalIndex, li);
+        return;
     }
-    
+
     saveData();
     renderTasks();
 });
 
 let isEditing = false;
 
-function editTask(index, li) {
-    isEditing = true;  
+function editTask(originalIndex, li) {
+    isEditing = true;
     let input = document.createElement("input");
     input.type = "text";
-    input.value = tasks[index].text;
+    input.value = tasks[originalIndex].text;
     input.className = "edit-input";
 
     li.textContent = "";
     li.appendChild(input);
     input.focus();
 
-    let span = document.createElement("span");
-    span.innerHTML = "\u00d7";
-    li.appendChild(span);
+    const closeSpan = document.createElement("span");
+    closeSpan.className = "close";
+    closeSpan.innerHTML = "\u00d7";
+    li.appendChild(closeSpan);
 
-    let wasCancelled = false; 
+    let wasCancelled = false;
 
-    input.addEventListener("keydown", function(e) {
+    input.addEventListener("keydown", function (e) {
         if (e.key === "Escape") {
-        wasCancelled = true;   
-        isEditing = false;  
-        renderTasks();
+            wasCancelled = true;
+            isEditing = false;
+            renderTasks();
         } else if (e.key === "Enter") {
-        e.stopPropagation();  
-        saveEdit();
+            e.stopPropagation();
+            saveEdit();
         }
     });
 
-    input.addEventListener("blur", function() {
+    input.addEventListener("blur", function () {
         saveEdit();
     });
 
     function saveEdit() {
-        if (wasCancelled) return; 
+        if (wasCancelled) return;
         let edit = input.value.trim();
         isEditing = false;
         if (edit === "") {
-        tasks.splice(index, 1);  
+            tasks.splice(originalIndex, 1);
         } else {
-        tasks[index].text = edit;
+            tasks[originalIndex].text = edit;
         }
         saveData();
         renderTasks();
@@ -220,66 +378,149 @@ function editTask(index, li) {
 }
 
 
-
 let focusedIndex = -1;
 
-document.addEventListener("keydown", function(e){
-    const listItems = listContainer.querySelectorAll("li");
-    if(isEditing) return;
+document.addEventListener("keydown", function (e) {
+    const listItems = Array.from(listContainer.querySelectorAll("li"));
 
-    switch(e.key){
-        case "ArrowDown":
-            if(listItems.length === 0) return;
+    if (e.key === "n" || e.key === "N") {
+        if (document.activeElement.tagName === "INPUT") return;
+        e.preventDefault();
+        focusedIndex = -1; 
+
+        if (e.shiftKey) {
+            newCategoryInput.focus(); 
+        } else {
+            inputBox.focus(); 
+        }
+        return; 
+    }
+
+    if (isEditing || listItems.length === 0 || listItems[0].style.cursor === "default") {
+        if (e.ctrlKey && (e.key === "ArrowUp" || e.key === "ArrowDown")) {
             e.preventDefault();
-            if(e.shiftKey && focusedIndex >= 0) {
-                const currentIndex = parseInt(listItems[focusedIndex].getAttribute("data-index"));
-                    if(currentIndex < tasks.length - 1) {
-                        [tasks[currentIndex], tasks[currentIndex + 1]] = [tasks[currentIndex + 1], tasks[currentIndex]];
+            const categoryItems = Array.from(categoryList.querySelectorAll("li.category-item"));
+            if (categoryItems.length === 0) return;
+
+            const currentActiveIndex = categories.findIndex(cat => cat.name === activeCategory);
+            let nextIndex = currentActiveIndex;
+
+            if (e.key === "ArrowDown") {
+                nextIndex = (currentActiveIndex + 1) % categories.length;
+            } else if (e.key === "ArrowUp") {
+                nextIndex = (currentActiveIndex - 1 + categories.length) % categories.length;
+            }
+
+            if (nextIndex !== currentActiveIndex) {
+                selectCategory(categories[nextIndex].name);
+            }
+            return; 
+        }
+        return; 
+    }
+
+    const filteredTasks = tasks.filter(task =>
+        activeCategory === "All" || task.category === activeCategory
+    );
+
+    let currentOriginalIndex = -1;
+    if (focusedIndex >= 0 && focusedIndex < listItems.length) {
+        currentOriginalIndex = parseInt(listItems[focusedIndex].getAttribute("data-original-index"));
+    }
+
+    switch (e.key) {
+        case "ArrowDown":
+            e.preventDefault();
+            if (e.ctrlKey) {
+                const categoryItems = Array.from(categoryList.querySelectorAll("li.category-item"));
+                if (categoryItems.length === 0) return;
+
+                const currentActiveIndex = categories.findIndex(cat => cat.name === activeCategory);
+                const nextIndex = (currentActiveIndex + 1) % categories.length;
+
+                if (nextIndex !== currentActiveIndex) {
+                    selectCategory(categories[nextIndex].name);
+                }
+            } else if (e.shiftKey && focusedIndex >= 0) {
+                const currentFilteredIndex = filteredTasks.findIndex(task => tasks.indexOf(task) === currentOriginalIndex);
+                if (currentFilteredIndex < filteredTasks.length - 1) {
+                    const nextFilteredTaskOriginalIndex = tasks.indexOf(filteredTasks[currentFilteredIndex + 1]);
+
+                    const taskToMove = tasks[currentOriginalIndex];
+                    const targetTask = tasks[nextFilteredTaskOriginalIndex];
+
+                    const tempTasks = [...tasks];
+                    const taskToMoveActualIndex = tempTasks.indexOf(taskToMove);
+                    const targetTaskActualIndex = tempTasks.indexOf(targetTask);
+
+                    if (taskToMoveActualIndex > -1 && targetTaskActualIndex > -1) {
+                        [tempTasks[taskToMoveActualIndex], tempTasks[targetTaskActualIndex]] = [tempTasks[targetTaskActualIndex], tempTasks[taskToMoveActualIndex]];
+                        tasks = tempTasks;
                         saveData();
                         renderTasks();
-                        
+
                         setTimeout(() => {
                             const newItems = listContainer.querySelectorAll("li");
                             focusedIndex = Math.min(focusedIndex + 1, newItems.length - 1);
-                            newItems[focusedIndex].focus();
+                            if (newItems[focusedIndex]) newItems[focusedIndex].focus();
                         }, 0);
                     }
-                } else {
-                    focusedIndex = (focusedIndex + 1) % listItems.length;
-                    listItems[focusedIndex].focus();
                 }
+            } else { 
+                focusedIndex = (focusedIndex + 1) % listItems.length;
+                listItems[focusedIndex].focus();
+            }
             break;
 
         case "ArrowUp":
-            if(listItems.length === 0) return;
             e.preventDefault();
-        if(e.shiftKey && focusedIndex >= 0) {
+            if (e.ctrlKey) { 
+                const categoryItems = Array.from(categoryList.querySelectorAll("li.category-item"));
+                if (categoryItems.length === 0) return;
 
-            const currentIndex = parseInt(listItems[focusedIndex].getAttribute("data-index"));
-                if(currentIndex > 0) {
-                    [tasks[currentIndex], tasks[currentIndex - 1]] = [tasks[currentIndex - 1], tasks[currentIndex]];
-                    saveData();
-                    renderTasks();
-                    
-                    setTimeout(() => {
-                        const newItems = listContainer.querySelectorAll("li");
-                        focusedIndex = Math.max(focusedIndex - 1, 0);
-                        newItems[focusedIndex].focus();
-                    }, 0);
+                const currentActiveIndex = categories.findIndex(cat => cat.name === activeCategory);
+                const nextIndex = (currentActiveIndex - 1 + categories.length) % categories.length;
+
+                if (nextIndex !== currentActiveIndex) {
+                    selectCategory(categories[nextIndex].name);
                 }
-            } else {
+            } else if (e.shiftKey && focusedIndex >= 0) { 
+                const currentFilteredIndex = filteredTasks.findIndex(task => tasks.indexOf(task) === currentOriginalIndex);
+                if (currentFilteredIndex > 0) {
+                    const prevFilteredTaskOriginalIndex = tasks.indexOf(filteredTasks[currentFilteredIndex - 1]);
+
+                    const taskToMove = tasks[currentOriginalIndex];
+                    const targetTask = tasks[prevFilteredTaskOriginalIndex];
+
+                    const tempTasks = [...tasks];
+                    const taskToMoveActualIndex = tempTasks.indexOf(taskToMove);
+                    const targetTaskActualIndex = tempTasks.indexOf(targetTask);
+
+                    if (taskToMoveActualIndex > -1 && targetTaskActualIndex > -1) {
+                        [tempTasks[taskToMoveActualIndex], tempTasks[targetTaskActualIndex]] = [tempTasks[targetTaskActualIndex], tempTasks[taskToMoveActualIndex]];
+                        tasks = tempTasks;
+                        saveData();
+                        renderTasks();
+
+                        setTimeout(() => {
+                            const newItems = listContainer.querySelectorAll("li");
+                            focusedIndex = Math.max(focusedIndex - 1, 0);
+                            if (newItems[focusedIndex]) newItems[focusedIndex].focus();
+                        }, 0);
+                    }
+                }
+            } else { 
                 focusedIndex = (focusedIndex - 1 + listItems.length) % listItems.length;
                 listItems[focusedIndex].focus();
-            }       
-         break;
+            }
+            break;
 
-        case " ": 
-            if(document.activeElement.tagName === "INPUT") break;
-            if(listItems.length === 0) return;
+        case " ":
+            if (document.activeElement.tagName === "INPUT") break;
             e.preventDefault();
             if (focusedIndex >= 0) {
-                const index = listItems[focusedIndex].getAttribute("data-index");
-                tasks[index].completed = !tasks[index].completed;
+                const originalIdx = parseInt(listItems[focusedIndex].getAttribute("data-original-index"));
+                tasks[originalIdx].completed = !tasks[originalIdx].completed;
                 saveData();
                 renderTasks();
                 setTimeout(() => {
@@ -289,32 +530,27 @@ document.addEventListener("keydown", function(e){
             }
             break;
 
-        case "n":
-        case "N":
-            focusedIndex = -1;
-            if (document.activeElement.tagName === "INPUT") break;
-            e.preventDefault();
-            inputBox.focus();
-            break;
-        
         case "c":
         case "C":
-            if(e.shiftKey  && document.activeElement.tagName != "INPUT"){
+            if (e.shiftKey && document.activeElement.tagName != "INPUT") {
                 e.preventDefault();
-                tasks = tasks.filter(task => !task.completed);
+                if (activeCategory === "All") {
+                    tasks = tasks.filter(task => !task.completed);
+                } else {
+                    tasks = tasks.filter(task => !(task.completed && task.category === activeCategory));
+                }
                 saveData();
                 renderTasks();
             }
             break;
-        
+
         case "Backspace":
         case "Delete":
-            if(listItems.length === 0) return;
-            if(document.activeElement.tagName === "INPUT") break;
+            if (document.activeElement.tagName === "INPUT") break;
             e.preventDefault();
             if (focusedIndex >= 0) {
-                const index = listItems[focusedIndex].getAttribute("data-index");
-                tasks.splice(index, 1);
+                const originalIdx = parseInt(listItems[focusedIndex].getAttribute("data-original-index"));
+                tasks.splice(originalIdx, 1);
                 saveData();
                 renderTasks();
                 const newItems = listContainer.querySelectorAll("li");
@@ -330,21 +566,20 @@ document.addEventListener("keydown", function(e){
 
         case "Enter":
             if (document.activeElement === inputBox) break;
-            if(listItems.length === 0) return;
             e.preventDefault();
             if (document.activeElement.tagName === "INPUT") break;
             if (focusedIndex >= 0) {
-                const index = listItems[focusedIndex].getAttribute("data-index");
-                editTask(index, listItems[focusedIndex]);
+                const originalIdx = parseInt(listItems[focusedIndex].getAttribute("data-original-index"));
+                editTask(originalIdx, listItems[focusedIndex]);
             }
             break;
     }
 });
 
-listContainer.addEventListener("focus", function(e){
-    if(e.target.tagName === "LI"){
-        const listItems = listContainer.querySelectorAll("li");
-        focusedIndex = Array.from(listItems).indexOf(e.target);
+listContainer.addEventListener("focus", function (e) {
+    if (e.target.tagName === "LI") {
+        const listItems = Array.from(listContainer.querySelectorAll("li"));
+        focusedIndex = listItems.indexOf(e.target);
     }
 }, true);
 
@@ -352,16 +587,16 @@ const modal = document.getElementById("shortcut-modal");
 const btn = document.getElementById("help-button");
 const span = document.querySelector(".close-modal");
 
-btn.onclick = function() {
-  modal.style.display = "block";
+btn.onclick = function () {
+    modal.style.display = "block";
 };
 
-span.onclick = function() {
-  modal.style.display = "none";
-};
-
-window.onclick = function(event) {
-  if (event.target == modal) {
+span.onclick = function () {
     modal.style.display = "none";
-  }
+};
+
+window.onclick = function (event) {
+    if (event.target == modal) {
+        modal.style.display = "none";
+    }
 };
