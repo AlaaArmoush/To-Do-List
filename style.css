@@ -146,12 +146,12 @@ body {
 
 .todo-app {
   width: 100%;
-  max-width: 580px;
+  max-width: 650px;
   background: var(--app-bg-color);
   padding: 40px;
   border-radius: 25px;
   border: 1px solid rgba(255, 255, 255, 0.5);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  transform: scale(0.90);
 }
 
 .todo-app h2 {
@@ -362,15 +362,18 @@ li:focus {
   position: fixed;
   top: 50%;
   left: 50%;
-  transform: translate(-50%, -50%);
-
+  transform: translate(-50%, -50%) scale(0.8);;
   background-color: var(--app-bg-color);
   padding: 20px;
   border: 1px solid #888;
   width: 90%;
-  max-width: 400px;
+  max-width: 550px;
   border-radius: 12px;
   color: var(--primary-text-color);
+}
+
+.modal-content li {
+  margin-top: 6px;
 }
 
 .close-modal {
