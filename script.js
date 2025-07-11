@@ -81,7 +81,6 @@ newCategoryInput.addEventListener("keydown", function(e){
     }
 });
 
-
 function selectCategory(categoryName) {
     activeCategory = categoryName;
     renderCategories();
@@ -111,6 +110,35 @@ function deleteCategory(categoryName) {
         renderCategories();
         renderTasks();
     }
+}
+
+function reorderCategory(direction) {
+    const currentIndex = categories.findIndex(cat => cat.name === activeCategory);
+    if (currentIndex === -1) return;
+
+    const currentCategory = categories[currentIndex];
+    
+    if (currentCategory.immutable) return;
+
+    let targetIndex;
+    if (direction === "up") {
+        targetIndex = currentIndex - 1;
+        if (targetIndex >= 0 && categories[targetIndex].immutable) {
+            targetIndex = targetIndex - 1;
+        }
+    } else {
+        targetIndex = currentIndex + 1;
+        if (targetIndex < categories.length && categories[targetIndex].immutable) {
+            targetIndex = targetIndex + 1;
+        }
+    }
+
+    if (targetIndex < 0 || targetIndex >= categories.length) return;
+
+    [categories[currentIndex], categories[targetIndex]] = [categories[targetIndex], categories[currentIndex]];
+    
+    saveCategories();
+    renderCategories();
 }
 
 function addTask() {
@@ -253,7 +281,6 @@ function handleDragOver(e) {
     });
 }
 
-
 function handleDrop(e) {
     e.preventDefault();
 
@@ -287,7 +314,6 @@ function handleDrop(e) {
     renderTasks();
 }
 
-
 function handleDragEnd(e) {
     e.target.classList.remove('dragging');
     const dragArrows = document.querySelectorAll('.drag-arrow');
@@ -297,7 +323,6 @@ function handleDragEnd(e) {
     draggedIndex = -1;
 }
 
-
 function saveData() {
     localStorage.setItem("tasks", JSON.stringify(tasks));
 }
@@ -306,7 +331,6 @@ loadCategories();
 loadTasks();
 renderCategories();
 renderTasks();
-
 
 listContainer.addEventListener("click", function (e) {
     const li = e.target.closest("li[data-original-index]");
@@ -378,11 +402,17 @@ function editTask(originalIndex, li) {
     }
 }
 
-
 let focusedIndex = -1;
 
 document.addEventListener("keydown", function (e) {
     const listItems = Array.from(listContainer.querySelectorAll("li"));
+
+    if (e.key === "Escape") {
+        if (modal.style.display === "block") {
+            modal.style.display = "none";
+            return;
+        }
+    }
 
     if (e.key === "n" || e.key === "N") {
         if (document.activeElement.tagName === "INPUT") return;
@@ -397,9 +427,26 @@ document.addEventListener("keydown", function (e) {
         return; 
     }
 
+    if (e.key === "i" || e.key === "I") {
+        if (document.activeElement.tagName === "INPUT") return;
+        e.preventDefault();
+        modal.style.display = "block";
+        return;
+    }
+
     if (isEditing || listItems.length === 0 || listItems[0].style.cursor === "default") {
         if (e.ctrlKey && (e.key === "ArrowUp" || e.key === "ArrowDown")) {
             e.preventDefault();
+            
+            if (e.shiftKey) {
+                if (e.key === "ArrowUp") {
+                    reorderCategory("up");
+                } else if (e.key === "ArrowDown") {
+                    reorderCategory("down");
+                }
+                return;
+            }
+            
             const categoryItems = Array.from(categoryList.querySelectorAll("li.category-item"));
             if (categoryItems.length === 0) return;
 
@@ -433,6 +480,11 @@ document.addEventListener("keydown", function (e) {
         case "ArrowDown":
             e.preventDefault();
             if (e.ctrlKey) {
+                if (e.shiftKey) {
+                    reorderCategory("down");
+                    return;
+                }
+                
                 const categoryItems = Array.from(categoryList.querySelectorAll("li.category-item"));
                 if (categoryItems.length === 0) return;
 
@@ -475,7 +527,12 @@ document.addEventListener("keydown", function (e) {
 
         case "ArrowUp":
             e.preventDefault();
-            if (e.ctrlKey) { 
+            if (e.ctrlKey) {
+                if (e.shiftKey) {
+                    reorderCategory("up");
+                    return;
+                }
+                
                 const categoryItems = Array.from(categoryList.querySelectorAll("li.category-item"));
                 if (categoryItems.length === 0) return;
 
