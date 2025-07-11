@@ -7,12 +7,16 @@ let tasks = [];
 let categories = [];
 let activeCategory = "All";
 
-function loadCategories() {
+function loadCategories(){
     const storedCategories = localStorage.getItem("categories");
-    if (storedCategories) {
+    if(storedCategories){
         categories = JSON.parse(storedCategories);
-    } else {
-        categories = [{ name: "All", immutable: true }];
+    } else{
+        categories = [{name: "All", immutable: true}];
+    }
+
+    if(categories.length > 0){
+        activeCategory = categories[0].name;
     }
 }
 
@@ -116,21 +120,11 @@ function reorderCategory(direction) {
     const currentIndex = categories.findIndex(cat => cat.name === activeCategory);
     if (currentIndex === -1) return;
 
-    const currentCategory = categories[currentIndex];
-    
-    if (currentCategory.immutable) return;
-
     let targetIndex;
     if (direction === "up") {
         targetIndex = currentIndex - 1;
-        if (targetIndex >= 0 && categories[targetIndex].immutable) {
-            targetIndex = targetIndex - 1;
-        }
     } else {
         targetIndex = currentIndex + 1;
-        if (targetIndex < categories.length && categories[targetIndex].immutable) {
-            targetIndex = targetIndex + 1;
-        }
     }
 
     if (targetIndex < 0 || targetIndex >= categories.length) return;
