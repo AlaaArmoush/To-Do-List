@@ -406,6 +406,12 @@ document.addEventListener("keydown", function (e) {
             modal.style.display = "none";
             return;
         }
+
+        if(document.activeElement){
+            document.activeElement.blur();
+        }
+        focusedIndex = -1;
+        return;
     }
 
     if (e.key === "n" || e.key === "N") {
